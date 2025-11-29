@@ -37,10 +37,9 @@ This repository contains computational code and analysis pipelines developed for
 - **92 confirmed RB-specific alternative splicing events** identified using Boruta algorithm
 - **Refined from 3,408 DAS events** via random forest classification against 9,437 TCGA tumors (33 cancer types)
 - **Exon skipping dominance:** 55% of RB-specific events - disease-specific targeting of exon recognition
-- **3 molecular subtypes** identified based on splicing profiles - indicates disease heterogeneity
+- 
 - **Critical p53 inactivation pathway:** MDM2/MDM4 splicing dysregulation (RPS15, RPL37, CDK5RAP3)
-- **Disease specificity:** LUC7L PSI -0.18 in RB vs +0.12 in glioblastoma; CDK5RAP3 PSI +0.22 in RB vs -0.15 in lung cancer
-
+- 
 ### Chapter 3: Experimental Validation
 - **RT-qPCR validation:** 5 RB tumors + 4 retinal controls (RNA integrity 7.2-8.9)
 - **Statistically significant events:**
@@ -70,3 +69,66 @@ This repository contains computational code and analysis pipelines developed for
 ## Repository Purpose
 
 This repository serves to archive and share the computational code and scripts used in all three thesis chapters, enabling reproducibility of the analysis and supporting academic publication and committee review.
+
+## Key Findings Summary
+
+### Problem Statement
+- Retinoblastoma (~1 in 20,000 births) - most common childhood eye malignancy
+- 4-15% of RB1 mutations occur at splice sites, suggesting abnormal splicing drives progression
+- Previous studies limited to single datasets; comprehensive pan-cancer comparison was missing
+- Critical gap: RB splicing event specificity versus other cancers unknown
+
+### Protein Structure Impacts & Functional Consequences
+
+#### CCNB1 (Cell Cycle Regulator - NES Domain Disruption)
+- **Validation:** RT-qPCR p=0.01, fold change 6.02
+- **Structural alterations:** RMSD 1.87 A, TM-score 0.8, surface area change 230 sq A
+- **Domain disrupted:** Nuclear Export Signal (NES) - critical for subcellular localization
+- **Mechanism:** Exon skipping replaces α-helix with loop, junction displacement 4.2 A
+- **Consequence:** Aberrant cyclin B1 accumulation → uncontrolled mitotic progression
+
+#### ENO2 (Metabolic Enzyme - Active Site Alteration)
+- **Validation:** RT-qPCR p=0.01, fold change 4.91
+- **Structural alterations:** RMSD 1.23 A, TM-score 0.88, surface area change 110 sq A
+- **Domain disrupted:** Active site and substrate binding pocket
+- **Mechanism:** Loss of β-sheet repositions substrate binding, junction displacement 2.1 A
+- **Consequence:** Loss of glycolytic function → metabolic reprogramming toward proliferation
+
+#### LUC7L (RNA Processing Factor - RS-Domain Loss)
+- **Validation:** RT-qPCR p=0.9 (negative - tissue-specific, not disease-specific)
+- **Structural alterations:** RMSD 2.22 A, TM-score 0.48, surface area change 305 sq A
+- **Domain disrupted:** Complete RS-domain deletion - largest surface change observed
+- **Mechanism:** Junction displacement 6.3 A, removes protein-RNA interaction capability
+- **Consequence:** Loss of spliceosome assembly → dominant-negative regulatory effects
+
+#### CDK5RAP3 (Checkpoint Control - LXXLL Motif Disruption)
+- **Validation:** RT-qPCR p=0.03, fold change 4.5 | Proteomics: 20.72% sequence coverage
+- **Structural alterations:** RMSD 5.18 A, TM-score 0.42 (most dramatic), surface area 160 sq A
+- **Domain disrupted:** LXXLL motif - nuclear receptor/regulatory protein interaction
+- **Mechanism:** Intron retention disrupts LXXLL helix, junction displacement 3.8 A
+- **Consequence:** Elevated CDK5 activity → aberrant progression, reduced checkpoint control
+
+### Multi-Layered Tumor Suppressor Inactivation
+- **Layer 1:** Classical RB1 loss disrupts E2F pathway cell cycle control
+- **Layer 2:** MDM2/MDM4 splicing dysregulation impairs p53 surveillance
+  - RPS15 (alt 5' splice site), RPL37 (skipped exon), CDK5RAP3 (intron retention)
+- **Outcome:** Redundant inactivation resistant to single-pathway interventions
+
+### Disease-Specific Molecular Signatures
+- **LUC7L:** PSI -0.18 in RB vs +0.12 glioblastoma, +0.09 HCC
+- **CDK5RAP3:** PSI +0.22 in RB vs -0.15 lung cancer, -0.11 breast cancer
+- **Clinical implication:** Requires precision medicine tailored to RB's unique profile
+
+### Convergence on Cell Cycle Control
+- Alternative splicing creates isoforms with specific domain disruptions:
+  - CCNB1 NES dysfunction (cell cycle progression)
+  - ENO2 active site loss (metabolic activity)
+  - LUC7L spliceosome interaction loss (RNA processing)
+  - CDK5RAP3 interaction loss (checkpoint control)
+- **Selective advantage:** Coordinated dysregulation = complementary mechanism to RB1 mutations
+
+### Therapeutic & Diagnostic Opportunities
+- **Alternative splicing as vulnerability:** Multiple dysregulated nodes create targetable pathways
+- **Diagnostic biomarkers:** RB-specific events enable early detection and patient stratification
+- **Structure-based therapeutics:** Domain disruptions provide targets for isoform-specific modulation
+- **Precision stratification:** 3 molecular subtypes support personalized treatment planning
