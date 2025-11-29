@@ -17,13 +17,12 @@ This repository contains computational code and analysis pipelines developed for
 
 ## Key Findings
 
-- **Dataset:** 67 RNA-seq samples (50 RB tumors + 17 fetal retinal controls)
-- **Differential Alternative Splicing Events:** 6,136 DAS events identified, with 67 confirmed RB-specific events using Boruta machine learning algorithm
-- **Event Types:** Primarily mutually exclusive exons (41.6%) and exon skipping (35.8%)
-- **Validation:** Experimental confirmation through RT-qPCR, mass spectrometry, and protein structure analysis
+### Problem Statement
+- Retinoblastoma (~1 in 20,000 births) - most common childhood eye malignancy
+- 4-15% of RB1 mutations occur at splice sites, suggesting abnormal splicing drives progression
+- Previous studies limited to single datasets; comprehensive pan-cancer comparison was missing
+- Critical gap: RB splicing event specificity versus other cancers unknown
 
-
-*(See comprehensive analysis in Key Findings Summary section below for detailed results from each thesis chapter)*
 - ### Chapter 1: Comprehensive Meta-Analysis
 - **6,136 significant differential alternative splicing (DAS) events** identified across 1,262 distinct genes
 - **Mutually Exclusive Exons (MXE):** 41.6% (2,553 events) - predominant form of dysregulation
@@ -39,9 +38,8 @@ This repository contains computational code and analysis pipelines developed for
 - **92 confirmed RB-specific alternative splicing events** identified using Boruta algorithm
 - **Refined from 3,408 DAS events** via random forest classification against 9,437 TCGA tumors (33 cancer types)
 - **Exon skipping dominance:** 55% of RB-specific events - disease-specific targeting of exon recognition
-- 
-- **Critical p53 inactivation pathway:** MDM2/MDM4 splicing dysregulation (RPS15, RPL37, CDK5RAP3)
-- 
+ - **Critical p53 inactivation pathway:** MDM2/MDM4 splicing dysregulation (RPS15, RPL37, CDK5RAP3)
+  
 ### Chapter 3: Experimental Validation
 - **RT-qPCR validation:** 5 RB tumors + 4 retinal controls (RNA integrity 7.2-8.9)
 - **Statistically significant events:**
@@ -49,36 +47,6 @@ This repository contains computational code and analysis pipelines developed for
   - ENO2 exon-skip: p=0.01, fold change 4.91
   - CDK5RAP3 intron retention: p=0.03, fold change 4.5
 - **Proteomics evidence:** CDK5RAP3 20.72% sequence coverage (2 unique peptides, 7 total PSMs)
-- **Structural impact:** CCNB1 NES domain disruption (RMSD 1.87, TM-score 0.8) - impairs nuclear-cytoplasmic shuttling
-
-## Thesis Structure
-
-1. **Chapter 1:** Comprehensive analysis of alternative splicing in RB using meta-analysis of multi-project RNA-seq data
-2. **Chapter 2:** Machine learning-based identification of RB-specific alternative splicing events
-3. **Chapter 3:** Experimental validation through RT-qPCR, proteomics, and structural characterization
-
-## Technologies Used
-
-- RNA-seq alignment: STAR, HISAT2
-- Transcript quantification: Salmon, featureCounts
-- Splicing analysis: rMATS, SUPPA2
-- Machine learning: Boruta algorithm, Random Forest
-- Network analysis: WGCNA
-- Proteomics validation: Mass spectrometry (LC-MS/MS)
-- Protein structure: AlphaFold2, PyMOL
-- Functional enrichment: Gene Ontology, KEGG, MSigDB
-
-## Repository Purpose
-
-This repository serves to archive and share the computational code and scripts used in all three thesis chapters, enabling reproducibility of the analysis and supporting academic publication and committee review.
-
-## Key Findings Summary
-
-### Problem Statement
-- Retinoblastoma (~1 in 20,000 births) - most common childhood eye malignancy
-- 4-15% of RB1 mutations occur at splice sites, suggesting abnormal splicing drives progression
-- Previous studies limited to single datasets; comprehensive pan-cancer comparison was missing
-- Critical gap: RB splicing event specificity versus other cancers unknown
 
 ### Protein Structure Impacts & Functional Consequences
 
@@ -110,27 +78,24 @@ This repository serves to archive and share the computational code and scripts u
 - **Mechanism:** Intron retention disrupts LXXLL helix, junction displacement 3.8 A
 - **Consequence:** Elevated CDK5 activity → aberrant progression, reduced checkpoint control
 
-### Multi-Layered Tumor Suppressor Inactivation
-- **Layer 1:** Classical RB1 loss disrupts E2F pathway cell cycle control
-- **Layer 2:** MDM2/MDM4 splicing dysregulation impairs p53 surveillance
-  - RPS15 (alt 5' splice site), RPL37 (skipped exon), CDK5RAP3 (intron retention)
-- **Outcome:** Redundant inactivation resistant to single-pathway interventions
+## Thesis Structure
 
-### Disease-Specific Molecular Signatures
-- **LUC7L:** PSI -0.18 in RB vs +0.12 glioblastoma, +0.09 HCC
-- **CDK5RAP3:** PSI +0.22 in RB vs -0.15 lung cancer, -0.11 breast cancer
-- **Clinical implication:** Requires precision medicine tailored to RB's unique profile
+1. **Chapter 1:** Comprehensive analysis of alternative splicing in RB using meta-analysis of multi-project RNA-seq data
+2. **Chapter 2:** Machine learning-based identification of RB-specific alternative splicing events
+3. **Chapter 3:** Experimental validation through RT-qPCR, proteomics, and structural characterization
 
-### Convergence on Cell Cycle Control
-- Alternative splicing creates isoforms with specific domain disruptions:
-  - CCNB1 NES dysfunction (cell cycle progression)
-  - ENO2 active site loss (metabolic activity)
-  - LUC7L spliceosome interaction loss (RNA processing)
-  - CDK5RAP3 interaction loss (checkpoint control)
-- **Selective advantage:** Coordinated dysregulation = complementary mechanism to RB1 mutations
+## Technologies Used
 
-### Therapeutic & Diagnostic Opportunities
-- **Alternative splicing as vulnerability:** Multiple dysregulated nodes create targetable pathways
-- **Diagnostic biomarkers:** RB-specific events enable early detection and patient stratification
-- **Structure-based therapeutics:** Domain disruptions provide targets for isoform-specific modulation
-- **Precision stratification:** 3 molecular subtypes support personalized treatment planning
+- RNA-seq alignment: STAR, HISAT2
+- Transcript quantification: Salmon, featureCounts
+- Splicing analysis: rMATS, SUPPA2
+- Machine learning: Boruta algorithm, Random Forest
+- Network analysis: WGCNA
+- Proteomics validation: Mass spectrometry (LC-MS/MS)
+- Protein structure: AlphaFold2, PyMOL
+- Functional enrichment: Gene Ontology, KEGG, MSigDB
+
+## Repository Purpose
+
+This repository serves to archive and share the computational code and scripts used in all three thesis chapters, enabling reproducibility of the analysis and supporting academic publication and committee review.
+
