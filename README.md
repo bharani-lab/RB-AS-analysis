@@ -22,6 +22,8 @@ This repository contains computational code and analysis pipelines developed for
 - **Event Types:** Primarily mutually exclusive exons (41.6%) and exon skipping (35.8%)
 - **Validation:** Experimental confirmation through RT-qPCR, mass spectrometry, and protein structure analysis
 
+
+*(See comprehensive analysis in Key Findings Summary section below for detailed results from each thesis chapter)*
 - ### Chapter 1: Comprehensive Meta-Analysis
 - **6,136 significant differential alternative splicing (DAS) events** identified across 1,262 distinct genes
 - **Mutually Exclusive Exons (MXE):** 41.6% (2,553 events) - predominant form of dysregulation
