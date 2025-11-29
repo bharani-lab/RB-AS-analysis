@@ -1,263 +1,193 @@
-#!/usr/bin/env Rscript
+#!/bin/bash
 #
-# Script 1: RNA-seq Preprocessing and Quality Control
-# 
-# Purpose: Comprehensive QC pipeline for raw RNA-seq FASTQ files from retinoblastoma samples
-# Performs: FastQC analysis, adapter trimming, quality filtering, and alignment-ready validation
-# 
-# Author: A. Mohamed Hameed Aslam (AMRF Lab, Alavand University)
-# Created: 2025-11-30
-# Dependencies: fastqc, fastp, fastq_screen (optional), ShortRead (Bioconductor)
+# SCRIPT 1: SRA DATA DOWNLOAD AND PREPROCESSING
+#
+# Purpose: Download RNA-seq FASTQ files from NCBI SRA for retinoblastoma tumors and retinal controls
+# Output: FASTQ files organized in data/raw/ directory
+# Dependencies: fastq-dump (SRA Toolkit), conda or manual installation
+#
+# Author: A. Mohamed Hameed Aslam (AMRF Lab, Allagappa University)
+# Date: 2025-11-30
 #
 
-# Load required libraries
-library(ShortRead)
-library(Biostrings)
-library(ggplot2)
-library(dplyr)
-library(data.table)
-
-# Configuration and Parameters
-# ================================
-
-# Define input/output directories
-WORK_DIR <- "./data/raw_fastq"
-QC_OUTPUT_DIR <- "./qc_reports"
-TRIM_OUTPUT_DIR <- "./data/trimmed_fastq"
-LOG_DIR <- "./logs"
-
-# QC thresholds
-MIN_QUALITY <- 20
-MIN_LENGTH <- 50
-ADAPTER_PATTERN <- "AGATCGGAAGAGC"  # Illumina TruSeq adapter
-
-# Sample metadata
-SAMPLES <- c("RB_01", "RB_02", "RB_03", "RB_04", "RB_05")
-RETINAL_CONTROLS <- c("Ret_Ctrl_01", "Ret_Ctrl_02", "Ret_Ctrl_03", "Ret_Ctrl_04")
-ALL_SAMPLES <- c(SAMPLES, RETINAL_CONTROLS)
-
-# Read layout (paired or single)
-READ_TYPE <- "paired"  # Options: "paired" or "single"
-
-# Create output directories
-dir.create(QC_OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
-dir.create(TRIM_OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
-dir.create(LOG_DIR, showWarnings = FALSE, recursive = TRUE)
+set -euo pipefail
 
 # ================================
-# Function 1: FastQC Quality Assessment
+# LOGGING AND UTILITY FUNCTIONS
 # ================================
 
-perform_fastqc_analysis <- function(sample_name, read_type = "paired") {
-  
-  cat("\n=== FastQC Analysis for", sample_name, "===")
-  
-  if (read_type == "paired") {
-    r1_file <- file.path(WORK_DIR, paste0(sample_name, "_R1.fastq.gz"))
-    r2_file <- file.path(WORK_DIR, paste0(sample_name, "_R2.fastq.gz"))
-    files <- c(r1_file, r2_file)
-  } else {
-    files <- file.path(WORK_DIR, paste0(sample_name, ".fastq.gz"))
-  }
-  
-  # Check file existence
-  for (f in files) {
-    if (!file.exists(f)) {
-      warning("File not found:", f)
-      return(NULL)
-    }
-  }
-  
-  # Read FASTQ with ShortRead
-  fq_list <- lapply(files, function(x) {
-    readFastq(x)
-  })
-  
-  names(fq_list) <- if (read_type == "paired") c("R1", "R2") else "SE"
-  
-  # Extract quality scores and sequences
-  qc_stats <- list()
-  
-  for (i in seq_along(fq_list)) {
-    fq <- fq_list[[i]]
-    read_id <- names(fq_list)[i]
+logmessage() {
+    local msg="$1"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local logentry="[$timestamp] $msg"
+    echo "$logentry"
+    echo "$logentry" >> "$DOWNLOAD_LOG"
+}
+
+# ================================
+# DIRECTORY CONFIGURATION
+# ================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="${SCRIPT_DIR%/scripts}"
+RAW_DATA_DIR="${PROJECT_ROOT}/data/raw"
+LOG_DIR="${PROJECT_ROOT}/logs"
+DOWNLOAD_LOG="${LOG_DIR}/download_$(date +%Y%m%d_%H%M%S).txt"
+
+mkdir -p "${RAW_DATA_DIR}/RB"
+mkdir -p "${RAW_DATA_DIR}/Control"
+mkdir -p "${LOG_DIR}"
+
+logmessage "===================================================="
+logmessage "RNA-seq SRA Data Download Pipeline"
+logmessage "===================================================="
+logmessage "Project Root: $PROJECT_ROOT"
+logmessage "Output Directory: $RAW_DATA_DIR"
+logmessage "Log File: $DOWNLOAD_LOG"
+
+# ================================
+# DEPENDENCY CHECK
+# ================================
+
+if ! command -v fastq-dump &> /dev/null; then
+    logmessage "ERROR: fastq-dump not found. Please install SRA Toolkit."
+    logmessage "Installation: conda install -c bioconda sra-tools"
+    exit 1
+fi
+
+logmessage "SRA Toolkit found: $(fastq-dump --version 2>&1 | head -1)"
+
+# ================================
+# SAMPLE ACCESSIONS
+# ================================
+
+# RB TUMOR SAMPLES (SRA accessions)
+RB_ACCESSIONS=(
+    "SRR13025501"  # RB sample 1
+    "SRR13025502"  # RB sample 2
+    "SRR13025503"  # RB sample 3
+    "SRR13025504"  # RB sample 4
+    "SRR13025505"  # RB sample 5
+    # Add more RB accessions as needed (production: 50 samples)
+)
+
+# CONTROL SAMPLES - Normal retinal tissue
+CONTROL_ACCESSIONS=(
+    "SRR11292097"  # Control sample 1
+    "SRR11292098"  # Control sample 2
+    "SRR11292099"  # Control sample 3
+    "SRR11292100"  # Control sample 4
+    # Add more control accessions as needed (production: 17 samples)
+)
+
+logmessage "Configuration:"
+logmessage "  - RB samples: ${#RB_ACCESSIONS[@]}"
+logmessage "  - Control samples: ${#CONTROL_ACCESSIONS[@]}"
+
+# ================================
+# DOWNLOAD FUNCTION
+# ================================
+
+download_and_convert_sample() {
+    local accession="$1"
+    local sample_type="$2"  # "RB" or "Control"
+    local output_dir="${RAW_DATA_DIR}/${sample_type}"
     
-    # Basic statistics
-    sequences <- sread(fq)
-    qualities <- quality(fq)
+    mkdir -p "$output_dir"
     
-    qc_stats[[read_id]] <- data.frame(
-      Sample = sample_name,
-      Read = read_id,
-      Total_Reads = length(fq),
-      Mean_Length = mean(width(sequences)),
-      Min_Length = min(width(sequences)),
-      Max_Length = max(width(sequences)),
-      Mean_Quality = mean(as.numeric(qualities)),
-      GC_Content = mean(alphabetFrequency(sequences)[, "G"] + 
-                        alphabetFrequency(sequences)[, "C"]) / 
-                   mean(width(sequences)) * 100,
-      stringsAsFactors = FALSE
-    )
-  }
-  
-  qc_df <- do.call(rbind, qc_stats)
-  rownames(qc_df) <- NULL
-  
-  return(qc_df)
-}
-
-# ================================
-# Function 2: Quality Filtering and Adapter Trimming
-# ================================
-
-perform_trimming <- function(sample_name, read_type = "paired") {
-  
-  cat("\n=== Trimming and QC Filtering for", sample_name, "===")
-  
-  if (read_type == "paired") {
-    r1_input <- file.path(WORK_DIR, paste0(sample_name, "_R1.fastq.gz"))
-    r2_input <- file.path(WORK_DIR, paste0(sample_name, "_R2.fastq.gz"))
-    r1_output <- file.path(TRIM_OUTPUT_DIR, paste0(sample_name, "_R1_trimmed.fastq.gz"))
-    r2_output <- file.path(TRIM_OUTPUT_DIR, paste0(sample_name, "_R2_trimmed.fastq.gz"))
+    logmessage "Downloading [$sample_type] $accession..."
     
-    trim_cmd <- sprintf(
-      "fastp -i %s -I %s -o %s -O %s --qualified_quality_phred %d --length_required %d --html %s --json %s -w 4",
-      r1_input, r2_input, r1_output, r2_output, MIN_QUALITY, MIN_LENGTH,
-      file.path(QC_OUTPUT_DIR, paste0(sample_name, "_fastp.html")),
-      file.path(QC_OUTPUT_DIR, paste0(sample_name, "_fastp.json"))
-    )
-  } else {
-    input <- file.path(WORK_DIR, paste0(sample_name, ".fastq.gz"))
-    output <- file.path(TRIM_OUTPUT_DIR, paste0(sample_name, "_trimmed.fastq.gz"))
-    
-    trim_cmd <- sprintf(
-      "fastp -i %s -o %s --qualified_quality_phred %d --length_required %d --html %s --json %s -w 4",
-      input, output, MIN_QUALITY, MIN_LENGTH,
-      file.path(QC_OUTPUT_DIR, paste0(sample_name, "_fastp.html")),
-      file.path(QC_OUTPUT_DIR, paste0(sample_name, "_fastp.json"))
-    )
-  }
-  
-  # Execute fastp command
-  result <- system(trim_cmd, intern = TRUE)
-  
-  # Log results
-  cat("\nTrimming completed for", sample_name)
-  
-  return(list(command = trim_cmd, status = ifelse(inherits(result, "error"), "Failed", "Success")))
+    if fastq-dump \
+        --defline-seq '@$sn[_$rn]/$ri' \
+        --defline-qual '+' \
+        --split-files \
+        --gzip \
+        --outdir "$output_dir" \
+        --skip-technical \
+        "$accession" 2>> "$DOWNLOAD_LOG"; then
+        logmessage "✓ Successfully downloaded: $accession"
+        return 0
+    else
+        logmessage "✗ FAILED to download: $accession - Check log for details"
+        return 1
+    fi
 }
 
 # ================================
-# Function 3: QC Summary Report Generation
+# MAIN DOWNLOAD LOOP
 # ================================
 
-generate_qc_summary <- function(qc_data_list) {
-  
-  cat("\n=== Generating QC Summary Report ===")
-  
-  # Combine all QC data
-  qc_combined <- do.call(rbind, qc_data_list)
-  rownames(qc_combined) <- NULL
-  
-  # Summary statistics by sample type
-  summary_stats <- qc_combined %>%
-    group_by(Sample) %>%
-    summarise(
-      Avg_Reads = mean(Total_Reads, na.rm = TRUE),
-      Avg_Length = mean(Mean_Length, na.rm = TRUE),
-      Avg_Quality = mean(Mean_Quality, na.rm = TRUE),
-      GC_Avg = mean(GC_Content, na.rm = TRUE),
-      .groups = 'drop'
-    )
-  
-  # Write summary to file
-  summary_file <- file.path(QC_OUTPUT_DIR, "qc_summary_report.csv")
-  write.csv(summary_stats, summary_file, row.names = FALSE)
-  
-  cat("\nQC Summary Report saved to:", summary_file)
-  
-  # Generate visualization
-  p <- ggplot(qc_combined, aes(x = Sample, y = Mean_Quality, color = Read)) +
-    geom_point(size = 3, alpha = 0.7) +
-    geom_jitter(width = 0.2) +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(title = "Mean Quality Score Distribution",
-         x = "Sample", y = "Mean Quality Score (Phred)") +
-    ylim(0, 40)
-  
-  plot_file <- file.path(QC_OUTPUT_DIR, "qc_quality_distribution.pdf")
-  ggsave(plot_file, p, width = 10, height = 6, dpi = 300)
-  
-  cat("\nQC Plot saved to:", plot_file)
-  
-  return(summary_stats)
-}
+SUCCESSFUL_DOWNLOADS=0
+FAILED_DOWNLOADS=0
+
+logmessage ""
+logmessage "Starting RB tumor sample downloads..."
+for accession in "${RB_ACCESSIONS[@]}"; do
+    if download_and_convert_sample "$accession" "RB"; then
+        ((SUCCESSFUL_DOWNLOADS++))
+    else
+        ((FAILED_DOWNLOADS++))
+    fi
+done
+
+logmessage ""
+logmessage "Starting control sample downloads..."
+for accession in "${CONTROL_ACCESSIONS[@]}"; do
+    if download_and_convert_sample "$accession" "Control"; then
+        ((SUCCESSFUL_DOWNLOADS++))
+    else
+        ((FAILED_DOWNLOADS++))
+    fi
+done
 
 # ================================
-# Main Execution Pipeline
+# VALIDATION
 # ================================
 
-main <- function() {
-  
-  cat("\n========================================")
-  cat("\nRNA-seq Preprocessing and QC Pipeline")
-  cat("\nStart Time:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"))
-  cat("\n========================================\n")
-  
-  # Step 1: FastQC Analysis
-  cat("\n[STEP 1] Performing FastQC Analysis...\n")
-  qc_data_list <- lapply(ALL_SAMPLES, function(sample) {
-    tryCatch(
-      perform_fastqc_analysis(sample, READ_TYPE),
-      error = function(e) {
-        cat("\nError processing sample", sample, ":", conditionMessage(e))
-        return(NULL)
-      }
-    )
-  })
-  
-  # Remove NULL entries
-  qc_data_list <- qc_data_list[!sapply(qc_data_list, is.null)]
-  
-  if (length(qc_data_list) > 0) {
-    qc_df_all <- do.call(rbind, qc_data_list)
-    cat("\nFastQC Analysis completed for", nrow(qc_df_all) / 2, "samples")
-  }
-  
-  # Step 2: Quality Filtering and Trimming
-  cat("\n[STEP 2] Performing Quality Filtering and Adapter Trimming...\n")
-  trim_results <- lapply(ALL_SAMPLES, function(sample) {
-    tryCatch(
-      perform_trimming(sample, READ_TYPE),
-      error = function(e) {
-        cat("\nError trimming sample", sample, ":", conditionMessage(e))
-        return(NULL)
-      }
-    )
-  })
-  
-  # Step 3: Generate Summary Report
-  cat("\n[STEP 3] Generating QC Summary Report...\n")
-  if (length(qc_data_list) > 0) {
-    summary_report <- generate_qc_summary(qc_data_list)
-  }
-  
-  cat("\n========================================")
-  cat("\nPipeline Execution Completed")
-  cat("\nEnd Time:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"))
-  cat("\n========================================\n")
-  
-  # Save session info
-  sink(file.path(LOG_DIR, "session_info.txt"))
-  print(sessionInfo())
-  sink()
-  
-  cat("\nSession info saved to:", file.path(LOG_DIR, "session_info.txt"), "\n")
-}
+logmessage ""
+logmessage "Validating downloads..."
 
-# Execute main pipeline
-if (!interactive()) {
-  main()
-}
+RB_FILES=$(find "${RAW_DATA_DIR}/RB" -name '*.fastq.gz' 2>/dev/null | wc -l)
+CONTROL_FILES=$(find "${RAW_DATA_DIR}/Control" -name '*.fastq.gz' 2>/dev/null | wc -l)
+
+logmessage "Downloaded files:"
+logmessage "  - RB samples: $RB_FILES FASTQ files"
+logmessage "  - Control samples: $CONTROL_FILES FASTQ files"
+
+# Check for empty files
+EMPTY_FILES=0
+for file in "${RAW_DATA_DIR}"/**/*.fastq.gz; do
+    if [[ -f "$file" ]] && [[ ! -s "$file" ]]; then
+        logmessage "WARNING: Empty file detected: $file"
+        ((EMPTY_FILES++))
+    fi
+done
+
+if [[ $EMPTY_FILES -eq 0 ]]; then
+    logmessage "✓ All files have content"
+else
+    logmessage "✗ WARNING: Found $EMPTY_FILES empty files"
+fi
+
+# ================================
+# SUMMARY
+# ================================
+
+logmessage ""
+logmessage "===================================================="
+logmessage "DOWNLOAD PIPELINE SUMMARY"
+logmessage "===================================================="
+logmessage "Successful downloads: $SUCCESSFUL_DOWNLOADS"
+logmessage "Failed downloads: $FAILED_DOWNLOADS"
+logmessage "Download location: $RAW_DATA_DIR"
+logmessage "Log file: $DOWNLOAD_LOG"
+logmessage ""
+logmessage "NEXT STEPS:"
+logmessage "1. Review any failed downloads in the log file"
+logmessage "2. Run Script 2 for Salmon quantification"
+logmessage "3. Run Script 3 for Boruta feature selection"
+logmessage ""
+logmessage "Pipeline completed at $(date)"
+logmessage "===================================================="
+
+exit 0
