@@ -9,7 +9,9 @@ Comprehensive guide to all analysis scripts for retinoblastoma alternative splic
 This directory contains the complete computational pipeline for identifying and validating alternative splicing events in retinoblastoma (RB). Scripts are organized by analysis phase, progressing from raw data processing through to protein-level validation.
 
 **Total Scripts:** 11
+
 **Languages:** Bash (shell), R, Python
+
 **Primary Tools:** HISAT2, Salmon, STAR, rMATS, SUPPA2, Boruta ML, GO/KEGG enrichment, Mass Spectrometry analysis
 
 ---
@@ -278,9 +280,7 @@ Rscript scripts/13_mass_spectrometry_proteomics.R
 
 ---
 
-## Version History
 
-- **v1.0** (2025-11-30): Initial table of contents created with complete script documentation
 - 
 ---
 
