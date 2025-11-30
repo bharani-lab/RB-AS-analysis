@@ -169,14 +169,14 @@ Phase 1: Data Preprocessing
 ├── Script 0: Align RNA-seq → BAM files + counts
 └── Script 2: Quantify transcripts → TPM/abundance
            ↓
-Phase 2: Feature Selection & Filtering
-└── Script 3: Boruta ML → Important splicing events
-           ↓
 Phase 3: Splicing Event Detection
 └── Script 10: rMATS/SUPPA2 → Raw splicing events + PSI
 ├── Script 8: Merge events → Unified matrix
 └── Script 9: Match events → Cross-reference
-           ↓
+                     ↓
+Phase 2: Feature Selection & Filtering
+└── Script 3: Boruta ML → Important splicing events
+ ↓
 Phase 4: Statistical Analysis & Visualization  
 ├── Script 4: Hierarchical clustering → Heatmaps
 ├── Script 5: Violin plots → RB vs normal comparison
