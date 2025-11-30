@@ -281,3 +281,15 @@ Rscript scripts/13_mass_spectrometry_proteomics.R
 ## Version History
 
 - **v1.0** (2025-11-30): Initial table of contents created with complete script documentation
+- 
+---
+
+## List of Publications from the Thesis
+
+### Published
+
+- **Assane Rachidou, M. H. A.**, Vanniarajan, A., Kim, U., & Devarajan, B. (2025). Analysing Differential Alternative Splicing Events and Their Impact on Retinoblastoma Progression Using RNA-seq Metadata. *Asian Pacific Journal of Cancer Prevention*, 26(5), 1781–1792. https://doi.org/10.31557/APJCP.2025.26.5.1781
+
+### Under Review
+
+- **Assane Rachidou, M. H. A.**, Sethu, N., Vanniarajan, A., Kim, U., & Devarajan, B. Identification of Differential Alternative Splicing Events Specific to Retinoblastoma Associated with Tumour Progression. *(Under review)*
